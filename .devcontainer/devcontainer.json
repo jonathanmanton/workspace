@@ -56,7 +56,10 @@
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
 
     // Homebrew (Linuxbrew).
-    "ghcr.io/devcontainers-extra/features/homebrew-package:1": {}
+    "ghcr.io/devcontainers-extra/features/homebrew-package:1": {},
+
+    // Zellij terminal multiplexer.
+    "ghcr.io/devcontainers-extra/features/zellij:1": {}
   },
 
   // Remaining small CLI utilities from the Dockerfile's apt block that don't

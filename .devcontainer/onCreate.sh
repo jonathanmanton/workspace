@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
-# postCreate.sh — finishing touches that don't warrant a devcontainer Feature.
+# onCreate.sh — installs the toolchain into the image.
 #
-# Tools are installed as quiet, direct binary downloads (no Homebrew). This is
-# much faster than Linuxbrew (which drags in portable-ruby, python, node, icu4c
-# as dependencies) and keeps the build output quiet.
+# This runs as `onCreateCommand`, which the devcontainer *prebuild* bakes into
+# the published image (unlike postCreateCommand, which would re-run on every new
+# container). So all the heavy work below happens ONCE at publish time; starting
+# a container from the prebuilt image is just pull + run.
+#
+# Tools are installed as quiet, direct binary downloads (no Homebrew for the
+# toolchain). Homebrew itself is installed for ad-hoc use later, not used here.
 set -euo pipefail
+
+# Resolve this script's dir, then copy the helper assets (bw-login.sh,
+# starship.toml) to a fixed in-image location that doesn't depend on the
+# workspace path — important because a prebuilt image may be launched from
+# any folder (e.g. via `--devcontainer-image`).
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ASSET_DIR=/usr/local/share/devcontainer
+sudo mkdir -p "$ASSET_DIR"
+sudo cp "$here/bw-login.sh" "$ASSET_DIR/bw-login.sh"
+sudo cp "$here/starship.toml" "$ASSET_DIR/starship.toml"
 
 # --- Architecture-specific naming used by the various release assets ---
 case "$(uname -m)" in
@@ -21,13 +35,14 @@ sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
   jq make bind9-dnsutils groff tmux >/dev/null
 
-# Helpers (all quiet).
+# Helpers: download with retries (GitHub release assets can be flaky).
+CURL=(curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors)
 fetch_bin() {  # url dest  -> single executable
-  sudo curl -fsSL "$1" -o "$2"
+  sudo "${CURL[@]}" "$1" -o "$2"
   sudo chmod +x "$2"
 }
 fetch_tar() {  # url tar-args...  -> extract member(s) into $BIN
-  curl -fsSL "$1" | sudo tar -xz -C "$BIN" "${@:2}"
+  "${CURL[@]}" "$1" | sudo tar -xz -C "$BIN" "${@:2}"
 }
 
 # --- Single-binary / tarball tools, all into /usr/local/bin (on PATH for all) ---
@@ -44,9 +59,7 @@ fetch_bin "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${d
 fetch_bin "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-${deb_arch}" "$BIN/argocd"
 
 # --- Bitwarden CLI (Node is provided by the node Feature, via nvm) ---
-# DevPod runs this script with a bare PATH that doesn't include the nvm bin
-# dir, so `npm` may not resolve. Load nvm (and fall back to its current bin)
-# before using npm.
+# Load nvm so `npm` resolves regardless of the invoking environment's PATH.
 export NVM_DIR="${NVM_DIR:-/usr/local/share/nvm}"
 if [ -s "$NVM_DIR/nvm.sh" ]; then
   # shellcheck disable=SC1091
@@ -59,14 +72,12 @@ npm install -g --silent --no-fund --no-audit @bitwarden/cli
 uv tool install --quiet jinja2-cli   # installs into ~/.local/bin
 
 # --- starship config (default location ~/.config/starship.toml) ---
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$HOME/.config"
-cp "$here/starship.toml" "$HOME/.config/starship.toml"
+cp "$ASSET_DIR/starship.toml" "$HOME/.config/starship.toml"
 
 # --- Homebrew (Linuxbrew) ---
 # Installed for interactive/ad-hoc use later, NOT used during this bootstrap
-# (the toolchain above is installed via fast direct binaries on purpose). brew
-# is put on PATH for shells below.
+# (the toolchain above is installed via fast direct binaries on purpose).
 if [ ! -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
   NONINTERACTIVE=1 /bin/bash -c \
     "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -83,7 +94,7 @@ EOF
 
 # --- Hook starship + the Bitwarden login prompt into interactive shells ---
 # Append to ~/.bashrc (sourced by interactive shells) for the prompt + vault
-# unlock ($here was resolved above).
+# unlock. Source the asset copy so it works from a prebuilt image too.
 bashrc="$HOME/.bashrc"
 marker="# >>> devcontainer init >>>"
 if ! grep -qF "$marker" "$bashrc" 2>/dev/null; then
@@ -93,7 +104,7 @@ if ! grep -qF "$marker" "$bashrc" 2>/dev/null; then
     echo '[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
     echo 'export PATH="$HOME/.local/bin:$PATH"'
     echo 'command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"'
-    echo "source \"$here/bw-login.sh\" 2>/dev/null || true"
+    echo "source \"$ASSET_DIR/bw-login.sh\" 2>/dev/null || true"
     echo "# <<< devcontainer init <<<"
   } >> "$bashrc"
 fi

@@ -18,7 +18,16 @@ using devcontainer **Features** instead of hand-written `RUN` steps.
 | yq | `features: devcontainers-extra/yq` |
 | Starship prompt | `features: devcontainers-extra/starship` |
 | pipx + jinja2-cli | `features: python` + `devcontainers-extra/pipx-package` |
-| `jq`, `make`, `bind9-dnsutils`, `groff` | `postCreateCommand` apt install |
+| `jq`, `make`, `bind9-dnsutils`, `groff`, `tmux` | `postCreateCommand` apt install |
+
+## Extra tooling (beyond the Dockerfile)
+
+| Tool | devcontainer equivalent |
+| --- | --- |
+| uv / uvx | `features: devcontainers-extra/uv` |
+| Node.js + npm | `features: node` |
+| Docker-in-Docker | `features: docker-in-docker` |
+| tmux | `postCreateCommand` apt install |
 
 ## Notes / differences
 
@@ -38,5 +47,5 @@ build with the CLI:
 npm install -g @devcontainers/cli
 devcontainer up --workspace-folder .
 devcontainer exec --workspace-folder . bash -lc \
-  'terraform version && aws --version && kubectl version --client && helm version && eksctl version && argocd version --client && yq --version && jinja2 --version'
+  'terraform version && aws --version && kubectl version --client && helm version && eksctl version && argocd version --client && yq --version && jinja2 --version && uv --version && uvx --version && npm --version && tmux -V && docker --version'
 ```

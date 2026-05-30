@@ -44,12 +44,21 @@
     // jinja2-cli via pipx.
     "ghcr.io/devcontainers-extra/features/pipx-package:1": {
       "package": "jinja2-cli"
-    }
+    },
+
+    // uv / uvx (fast Python package + tool runner).
+    "ghcr.io/devcontainers-extra/features/uv:1": {},
+
+    // Node.js + npm.
+    "ghcr.io/devcontainers/features/node:1": {},
+
+    // Docker engine running inside the container (Docker-in-Docker).
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
 
   // Remaining small CLI utilities from the Dockerfile's apt block that don't
-  // warrant a Feature each.
-  "postCreateCommand": "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends jq make bind9-dnsutils groff",
+  // warrant a Feature each, plus tmux.
+  "postCreateCommand": "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends jq make bind9-dnsutils groff tmux",
 
   // Run as the non-root user provided by the base image.
   "remoteUser": "vscode"

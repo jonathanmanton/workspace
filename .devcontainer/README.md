@@ -28,7 +28,7 @@ using devcontainer **Features** instead of hand-written `RUN` steps.
 | Node.js + npm | `features: node` |
 | Docker-in-Docker | `features: docker-in-docker` |
 | Homebrew (Linuxbrew) | `features: devcontainers-extra/homebrew-package` |
-| Zellij | `features: devcontainers-extra/zellij` |
+| Zellij | `postCreateCommand` (official release binary; no published Feature) |
 | tmux | `postCreateCommand` apt install |
 
 ## Notes / differences

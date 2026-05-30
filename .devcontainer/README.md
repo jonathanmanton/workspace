@@ -28,8 +28,9 @@ using devcontainer **Features** instead of hand-written `RUN` steps.
 | Node.js + npm | `features: node` |
 | Docker-in-Docker | `features: docker-in-docker` |
 | Homebrew (Linuxbrew) | `features: devcontainers-extra/homebrew-package` |
-| Zellij | `features: devcontainers-extra/zellij` |
-| tmux | `postCreateCommand` apt install |
+| Zellij | `postCreate.sh` (official release binary; no published Feature) |
+| Bitwarden CLI | `postCreate.sh` (`brew install bitwarden-cli`, after the Homebrew Feature) |
+| tmux | `postCreate.sh` apt install |
 
 ## Notes / differences
 

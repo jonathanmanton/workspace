@@ -28,6 +28,7 @@ in portable-ruby, python, node and icu4c just as dependencies).
 | argocd | `postCreate.sh` — official release binary |
 | Bitwarden CLI (`bw`) | `postCreate.sh` — `npm install -g @bitwarden/cli` |
 | jinja2-cli | `postCreate.sh` — `uv tool install jinja2-cli` |
+| Homebrew (`brew`) | `postCreate.sh` — installed for later ad-hoc use; **not** used during bootstrap, and on PATH in all shells |
 
 ## Bitwarden auto-unlock
 
@@ -40,7 +41,9 @@ account.
 
 - **Helm 4** — `helm: latest` resolves to the latest stable (4.x). Pin to e.g.
   `"helm": "4.0.0"` if you need it fixed.
-- The non-root user is `vscode`.
+- The non-root user is `jonathan` (uid/gid 1000). A thin `Dockerfile` renames
+  the base image's default `vscode` user, keeping the uid/gid so workspace file
+  ownership is unchanged.
 - `.gitattributes` + `.editorconfig` force LF endings on the shell scripts;
   CRLF (e.g. from a Windows checkout) breaks `bash` inside the container.
 - Skipped as not relevant to a devcontainer: the Nerd Font (host terminal font)

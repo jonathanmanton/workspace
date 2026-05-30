@@ -1,54 +1,63 @@
 # iac-k8s-bootstrap devcontainer
 
-A minimal devcontainer that reproduces most of the toolchain from
-[`lago-morph/iac-k8s-bootstrap`'s Dockerfile](https://github.com/lago-morph/iac-k8s-bootstrap/blob/main/docker/Dockerfile)
-using devcontainer **Features** instead of hand-written `RUN` steps.
+A devcontainer that reproduces most of the toolchain from
+[`lago-morph/iac-k8s-bootstrap`'s Dockerfile](https://github.com/lago-morph/iac-k8s-bootstrap/blob/main/docker/Dockerfile).
 
-## How the Dockerfile maps to `devcontainer.json`
+Design: a small set of **official devcontainer Features** for the heavyweight
+pieces, and a single **`postCreate.sh`** that installs the rest as quiet,
+direct binary downloads. We deliberately avoid third-party `devcontainers-extra`
+Features (several don't exist or are flaky) and avoid Homebrew (slow: it drags
+in portable-ruby, python, node and icu4c just as dependencies).
 
-| Dockerfile | devcontainer equivalent |
+## What's installed
+
+| Tool | How |
 | --- | --- |
-| `FROM ubuntu:24.04` + base utils (`curl`, `wget`, `git`, `vim`, `unzip`, `gnupg`, `less`, `bash-completion`, `sudo`, …) + non-root user | `image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04` (ships these + a `vscode` sudo user) |
-| Terraform | `features: terraform` |
-| AWS CLI v2 | `features: aws-cli` |
-| kubectl | `features: kubectl-helm-minikube` (`version: latest`) |
-| Helm | `features: kubectl-helm-minikube` (`helm: latest` → **Helm 4**) |
-| eksctl | `features: devcontainers-extra/eksctl` |
-| ArgoCD CLI | `features: devcontainers-extra/argocd` |
-| yq | `features: devcontainers-extra/yq` |
-| Starship prompt | `features: devcontainers-extra/starship` |
-| pipx + jinja2-cli | `features: python` + `devcontainers-extra/pipx-package` |
-| `jq`, `make`, `bind9-dnsutils`, `groff`, `tmux` | `postCreateCommand` apt install |
+| Terraform | Feature `devcontainers/features/terraform` |
+| AWS CLI v2 | Feature `devcontainers/features/aws-cli` |
+| kubectl | Feature `devcontainers/features/kubectl-helm-minikube` |
+| **Helm 4** | same Feature (`helm: latest` → 4.x; `minikube: none`) |
+| Python | Feature `devcontainers/features/python` |
+| Node.js + npm | Feature `devcontainers/features/node` |
+| Docker-in-Docker | Feature `devcontainers/features/docker-in-docker` |
+| jq, make, dnsutils (`dig`), groff, tmux | `postCreate.sh` — apt |
+| zellij | `postCreate.sh` — official release tarball |
+| starship | `postCreate.sh` — official release tarball |
+| uv / uvx | `postCreate.sh` — official release tarball |
+| yq | `postCreate.sh` — official release binary |
+| argocd | `postCreate.sh` — official release binary |
+| Bitwarden CLI (`bw`) | `postCreate.sh` — `npm install -g @bitwarden/cli` |
+| jinja2-cli | `postCreate.sh` — `uv tool install jinja2-cli` |
 
-## Extra tooling (beyond the Dockerfile)
+## Bitwarden auto-unlock
 
-| Tool | devcontainer equivalent |
-| --- | --- |
-| uv / uvx | `features: devcontainers-extra/uv` |
-| Node.js + npm | `features: node` |
-| Docker-in-Docker | `features: docker-in-docker` |
-| Homebrew (Linuxbrew) | `features: devcontainers-extra/homebrew-package` |
-| Zellij | `postCreate.sh` (official release binary; no published Feature) |
-| Bitwarden CLI | `postCreate.sh` (`brew install bitwarden-cli`, after the Homebrew Feature) |
-| tmux | `postCreate.sh` apt install |
+`postCreate.sh` wires `bw-login.sh` into `~/.bashrc`, so every interactive shell
+prompts to unlock the vault for `jonathan@manton.com` and exports `BW_SESSION`
+for the session (Ctrl-C to skip). Edit `BW_EMAIL` in `bw-login.sh` to change the
+account.
 
-## Notes / differences
+## Notes
 
-- **Helm 4** — `helm: latest` resolves to the latest stable, which is Helm 4.x.
-  Pin to a specific version (e.g. `"helm": "4.0.0"`) if you need it fixed.
-- The non-root user is `vscode` rather than the Dockerfile's `ubuntu` user.
-- Skipped as not relevant to a devcontainer: the Liberation Mono Nerd Font
-  (host-side terminal font) and the repo-cloning helper scripts.
-- `minikube` is set to `none`; it isn't in the Dockerfile.
+- **Helm 4** — `helm: latest` resolves to the latest stable (4.x). Pin to e.g.
+  `"helm": "4.0.0"` if you need it fixed.
+- The non-root user is `vscode`.
+- `.gitattributes` + `.editorconfig` force LF endings on the shell scripts;
+  CRLF (e.g. from a Windows checkout) breaks `bash` inside the container.
+- Skipped as not relevant to a devcontainer: the Nerd Font (host terminal font)
+  and the repo-cloning helper scripts.
 
 ## Usage
 
-Open the repo in VS Code and run **Dev Containers: Reopen in Container**, or
-build with the CLI:
-
 ```bash
+# DevPod
+devpod up github.com/jonathanmanton/workspace      # from the repo
+devpod up . --recreate                             # rebuild a local clone
+
+# or the Dev Containers CLI
 npm install -g @devcontainers/cli
 devcontainer up --workspace-folder .
 devcontainer exec --workspace-folder . bash -lc \
-  'terraform version && aws --version && kubectl version --client && helm version && eksctl version && argocd version --client && yq --version && jinja2 --version && uv --version && uvx --version && npm --version && tmux -V && docker --version && brew --version && zellij --version'
+  'terraform version && aws --version && kubectl version --client && helm version && \
+   zellij --version && starship --version && uv --version && yq --version && \
+   argocd version --client && bw --version && jinja2 --version && tmux -V && docker --version'
 ```

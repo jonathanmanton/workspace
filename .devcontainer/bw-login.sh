@@ -11,11 +11,8 @@ esac
 
 BW_EMAIL="jonathan@manton.com"
 
-# Make sure the `bw` binary (installed via Homebrew) is on PATH.
-if ! command -v bw >/dev/null 2>&1; then
-  [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && \
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
+# `bw` is installed globally via npm and lives on the default PATH; nothing
+# extra to source here. Bail out if it's somehow missing.
 command -v bw >/dev/null 2>&1 || return 0 2>/dev/null || exit 0
 
 _bw_status() { bw status 2>/dev/null | jq -r '.status' 2>/dev/null; }

@@ -1,0 +1,71 @@
+{
+  "name": "iac-k8s-bootstrap",
+
+  // Ubuntu 24.04 base image. Already ships the "common utils" the Dockerfile
+  // installed by hand: a non-root sudo user, git, curl, wget, vim, unzip,
+  // gnupg, ca-certificates, bash-completion, less, etc. This replaces the
+  // apt-get block and the manual non-root user setup.
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  // Each tool the Dockerfile installed by hand becomes a Feature.
+  "features": {
+    // Terraform.
+    "ghcr.io/devcontainers/features/terraform:1": {},
+
+    // AWS CLI v2.
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+
+    // kubectl + Helm (Helm 4). minikube skipped - not in the Dockerfile.
+    // "latest" resolves to Helm 4.x.
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "none"
+    },
+
+    // Python + pipx (the Dockerfile uses pipx to install jinja2-cli).
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "os-provided",
+      "installTools": false
+    },
+
+    // eksctl.
+    "ghcr.io/devcontainers-extra/features/eksctl:1": {},
+
+    // ArgoCD CLI.
+    "ghcr.io/devcontainers-extra/features/argocd:1": {},
+
+    // yq (jq comes from the apt step below).
+    "ghcr.io/devcontainers-extra/features/yq:1": {},
+
+    // Starship prompt.
+    "ghcr.io/devcontainers-extra/features/starship:1": {},
+
+    // jinja2-cli via pipx.
+    "ghcr.io/devcontainers-extra/features/pipx-package:1": {
+      "package": "jinja2-cli"
+    },
+
+    // uv / uvx (fast Python package + tool runner).
+    "ghcr.io/devcontainers-extra/features/uv:1": {},
+
+    // Node.js + npm.
+    "ghcr.io/devcontainers/features/node:1": {},
+
+    // Docker engine running inside the container (Docker-in-Docker).
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+
+    // Homebrew (Linuxbrew).
+    "ghcr.io/devcontainers-extra/features/homebrew-package:1": {},
+
+    // Zellij terminal multiplexer.
+    "ghcr.io/devcontainers-extra/features/zellij:1": {}
+  },
+
+  // Remaining small CLI utilities from the Dockerfile's apt block that don't
+  // warrant a Feature each, plus tmux.
+  "postCreateCommand": "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends jq make bind9-dnsutils groff tmux",
+
+  // Run as the non-root user provided by the base image.
+  "remoteUser": "vscode"
+}

@@ -5,8 +5,15 @@
   // non-root user to "jonathan"). The base ships the "common utils" the
   // Dockerfile installed by hand: a sudo user, git, curl, wget, vim, unzip,
   // gnupg, ca-certificates, bash-completion, less, etc.
+  //
+  // cacheFrom pulls the prebuilt image published by .github/workflows/
+  // devcontainer-prebuild.yml, so `devpod up` reuses those layers instead of
+  // rebuilding Features locally (fast + avoids flaky local downloads). To skip
+  // building entirely, launch with: devpod up <dir> --devcontainer-image
+  //   ghcr.io/jonathanmanton/iac-devcontainer:latest
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "cacheFrom": "ghcr.io/jonathanmanton/iac-devcontainer:latest"
   },
 
   // Each tool the Dockerfile installed by hand becomes a Feature.
@@ -38,10 +45,10 @@
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
 
-  // Finishing touches that don't warrant a Feature each: apt utilities + tmux,
-  // Zellij (no published Feature), and Bitwarden CLI via Homebrew. Kept in a
-  // script so it's readable and the Homebrew shellenv can be sourced for brew.
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  // Toolchain install. Runs as onCreateCommand (not postCreate) so the
+  // devcontainer *prebuild* bakes it into the published image — new containers
+  // then come up via pull + run, with no heavy install per container.
+  "onCreateCommand": "bash .devcontainer/onCreate.sh",
 
   // Run as the renamed non-root user (uid/gid 1000, from the Dockerfile).
   "remoteUser": "jonathan"

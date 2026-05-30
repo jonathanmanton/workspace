@@ -48,7 +48,7 @@
   // Toolchain install. Runs as onCreateCommand (not postCreate) so the
   // devcontainer *prebuild* bakes it into the published image — new containers
   // then come up via pull + run, with no heavy install per container.
-  "onCreateCommand": "bash .devcontainer/onCreate.sh",
+  "onCreateCommand": "bash workspace/.devcontainer/onCreate.sh",
 
   // Run as the renamed non-root user (uid/gid 1000, from the Dockerfile).
   "remoteUser": "jonathan"

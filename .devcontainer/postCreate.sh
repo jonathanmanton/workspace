@@ -43,7 +43,16 @@ fetch_bin "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${d
 # argocd CLI
 fetch_bin "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-${deb_arch}" "$BIN/argocd"
 
-# --- Bitwarden CLI (Node is already provided by the node Feature) ---
+# --- Bitwarden CLI (Node is provided by the node Feature, via nvm) ---
+# DevPod runs this script with a bare PATH that doesn't include the nvm bin
+# dir, so `npm` may not resolve. Load nvm (and fall back to its current bin)
+# before using npm.
+export NVM_DIR="${NVM_DIR:-/usr/local/share/nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh" >/dev/null 2>&1 || true
+fi
+command -v npm >/dev/null 2>&1 || export PATH="$NVM_DIR/current/bin:$PATH"
 npm install -g --silent --no-fund --no-audit @bitwarden/cli
 
 # --- jinja2-cli (the Dockerfile used pipx; uv's tool runner is the modern way) ---

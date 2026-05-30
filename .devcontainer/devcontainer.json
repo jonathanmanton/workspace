@@ -53,7 +53,10 @@
     "ghcr.io/devcontainers/features/node:1": {},
 
     // Docker engine running inside the container (Docker-in-Docker).
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+
+    // Homebrew (Linuxbrew).
+    "ghcr.io/devcontainers-extra/features/homebrew-package:1": {}
   },
 
   // Remaining small CLI utilities from the Dockerfile's apt block that don't

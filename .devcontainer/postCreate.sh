@@ -37,10 +37,17 @@ brew install starship eksctl yq argocd uv bitwarden-cli
 # --- jinja2-cli (the Dockerfile installed it via pipx; use uv's tool runner) ---
 uv tool install jinja2-cli
 
-# --- Hook brew + the Bitwarden login prompt into interactive shells ---
-# Append to ~/.bashrc so every new interactive shell has brew/starship on PATH
-# and prompts to unlock the vault (exporting BW_SESSION).
-# postCreate runs from the workspace folder, so resolve absolute paths now.
+# --- Put brew (and ~/.local/bin) on PATH for ALL shells ---
+# A profile.d drop-in covers login shells (incl. non-interactive ones like
+# VS Code tasks and remote-ssh), so the brew-installed tools always resolve.
+sudo tee /etc/profile.d/10-devcontainer-path.sh >/dev/null <<'EOF'
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+export PATH="$HOME/.local/bin:$PATH"
+EOF
+
+# --- Hook starship + the Bitwarden login prompt into interactive shells ---
+# Append to ~/.bashrc (sourced by interactive shells) for the prompt + vault
+# unlock. postCreate runs from the workspace folder, so resolve paths now.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bashrc="$HOME/.bashrc"
 marker="# >>> devcontainer init >>>"

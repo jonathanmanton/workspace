@@ -18,35 +18,37 @@ if ! command -v bw >/dev/null 2>&1; then
 fi
 command -v bw >/dev/null 2>&1 || return 0 2>/dev/null || exit 0
 
+_bw_status() { bw status 2>/dev/null | jq -r '.status' 2>/dev/null; }
+
 # Already unlocked in this shell? Nothing to do.
-if [ -n "${BW_SESSION:-}" ] && \
-   [ "$(bw status 2>/dev/null | jq -r '.status' 2>/dev/null)" = "unlocked" ]; then
+if [ -n "${BW_SESSION:-}" ] && [ "$(_bw_status)" = "unlocked" ]; then
   return 0 2>/dev/null || exit 0
 fi
 
-case "$(bw status 2>/dev/null | jq -r '.status' 2>/dev/null)" in
+# Take a session key from stdin ($1=command). Only treat as success if we get a
+# non-empty key that actually verifies as "unlocked" — bw can exit 0 with empty
+# output when there's no TTY / the user submits nothing.
+_bw_try() {
+  local key
+  key="$("$@")" || return 1
+  [ -n "$key" ] || return 1
+  if [ "$(BW_SESSION="$key" bw status 2>/dev/null | jq -r '.status' 2>/dev/null)" = "unlocked" ]; then
+    export BW_SESSION="$key"
+    echo "Bitwarden vault unlocked."
+    return 0
+  fi
+  return 1
+}
+
+case "$(_bw_status)" in
   unauthenticated)
     echo "Bitwarden: log in as ${BW_EMAIL} (Ctrl-C to skip)"
-    if _bw_session="$(bw login "$BW_EMAIL" --raw)"; then
-      export BW_SESSION="$_bw_session"
-      echo "Bitwarden vault unlocked."
-    fi
+    _bw_try bw login "$BW_EMAIL" --raw || echo "Bitwarden: not unlocked."
     ;;
-  locked)
+  locked | unlocked)
+    # "unlocked" here means logged in & unlocked elsewhere, but this shell has no
+    # BW_SESSION — unlock again to obtain a session key for this shell.
     echo "Bitwarden: unlock vault for ${BW_EMAIL} (Ctrl-C to skip)"
-    if _bw_session="$(bw unlock --raw)"; then
-      export BW_SESSION="$_bw_session"
-      echo "Bitwarden vault unlocked."
-    fi
-    ;;
-  unlocked)
-    # Logged in and unlocked elsewhere, but BW_SESSION isn't in this shell.
-    # Re-unlock to obtain a session key for this shell.
-    echo "Bitwarden: unlock vault for ${BW_EMAIL} (Ctrl-C to skip)"
-    if _bw_session="$(bw unlock --raw)"; then
-      export BW_SESSION="$_bw_session"
-      echo "Bitwarden vault unlocked."
-    fi
+    _bw_try bw unlock --raw || echo "Bitwarden: not unlocked."
     ;;
 esac
-unset _bw_session

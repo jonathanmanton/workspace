@@ -1,11 +1,13 @@
 {
   "name": "iac-k8s-bootstrap",
 
-  // Ubuntu 24.04 base image. Already ships the "common utils" the Dockerfile
-  // installed by hand: a non-root sudo user, git, curl, wget, vim, unzip,
-  // gnupg, ca-certificates, bash-completion, less, etc. This replaces the
-  // apt-get block and the manual non-root user setup.
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  // Ubuntu 24.04 base image (via a thin Dockerfile that renames the default
+  // non-root user to "jonathan"). The base ships the "common utils" the
+  // Dockerfile installed by hand: a sudo user, git, curl, wget, vim, unzip,
+  // gnupg, ca-certificates, bash-completion, less, etc.
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
 
   // Each tool the Dockerfile installed by hand becomes a Feature.
   "features": {
@@ -41,6 +43,6 @@
   // script so it's readable and the Homebrew shellenv can be sourced for brew.
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
 
-  // Run as the non-root user provided by the base image.
-  "remoteUser": "vscode"
+  // Run as the renamed non-root user (uid/gid 1000, from the Dockerfile).
+  "remoteUser": "jonathan"
 }

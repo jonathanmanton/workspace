@@ -54,11 +54,21 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$HOME/.config"
 cp "$here/starship.toml" "$HOME/.config/starship.toml"
 
-# --- Put ~/.local/bin on PATH for ALL shells ---
+# --- Homebrew (Linuxbrew) ---
+# Installed for interactive/ad-hoc use later, NOT used during this bootstrap
+# (the toolchain above is installed via fast direct binaries on purpose). brew
+# is put on PATH for shells below.
+if [ ! -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# --- Put brew + ~/.local/bin on PATH for ALL shells ---
 # A profile.d drop-in covers login shells (incl. non-interactive ones like
 # VS Code tasks and remote-ssh). /usr/local/bin and the node Feature's bin dir
-# are already on PATH, so this is all that's needed.
+# are already on PATH.
 sudo tee /etc/profile.d/10-devcontainer-path.sh >/dev/null <<'EOF'
+[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$PATH"
 EOF
 
@@ -71,6 +81,7 @@ if ! grep -qF "$marker" "$bashrc" 2>/dev/null; then
   {
     echo ""
     echo "$marker"
+    echo '[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
     echo 'export PATH="$HOME/.local/bin:$PATH"'
     echo 'command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"'
     echo "source \"$here/bw-login.sh\" 2>/dev/null || true"

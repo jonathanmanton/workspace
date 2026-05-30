@@ -49,6 +49,11 @@ npm install -g --silent --no-fund --no-audit @bitwarden/cli
 # --- jinja2-cli (the Dockerfile used pipx; uv's tool runner is the modern way) ---
 uv tool install --quiet jinja2-cli   # installs into ~/.local/bin
 
+# --- starship config (default location ~/.config/starship.toml) ---
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+mkdir -p "$HOME/.config"
+cp "$here/starship.toml" "$HOME/.config/starship.toml"
+
 # --- Put ~/.local/bin on PATH for ALL shells ---
 # A profile.d drop-in covers login shells (incl. non-interactive ones like
 # VS Code tasks and remote-ssh). /usr/local/bin and the node Feature's bin dir
@@ -59,8 +64,7 @@ EOF
 
 # --- Hook starship + the Bitwarden login prompt into interactive shells ---
 # Append to ~/.bashrc (sourced by interactive shells) for the prompt + vault
-# unlock. postCreate runs from the workspace folder, so resolve paths now.
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# unlock ($here was resolved above).
 bashrc="$HOME/.bashrc"
 marker="# >>> devcontainer init >>>"
 if ! grep -qF "$marker" "$bashrc" 2>/dev/null; then
